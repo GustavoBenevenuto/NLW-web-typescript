@@ -1,9 +1,14 @@
 import React from 'react';
 import './App.css';
+import Home from './pages/Home';
 
 function App() {
+  
+
   return (
-      <h2>Teste</h2>
+    <div id="app">
+      <Home/>
+    </div>
   );
 }
 
