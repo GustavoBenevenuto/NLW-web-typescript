@@ -7,7 +7,7 @@ import { Map, TileLayer, Marker } from 'react-leaflet'; //Criação do Mapa
 import { LeafletMouseEvent } from 'leaflet';
 import api from '../../services/api'; //Pegar os dados da nossa API
 import axios from 'axios'; //Pegar dados do IBGE
-import { ItemsAPI, ufAPI, cityAPI } from '../../interfaces/interface';
+import { ItemsAPI, UfAPI, CityAPI, ValidateData } from '../../interfaces/interface';
 // State que são ARRAY ou OBJETO, precisamos definir manualmnete o tipo da variavel
 // que será armazenado lá dentro. Por isso a utilização da *interface*
 
@@ -15,7 +15,7 @@ const CreatePoint = () => {
 
     const history = useHistory();
     const [items, setItems] = useState<ItemsAPI[]>([]);
-    const [ufs, setUfs] = useState<ufAPI[]>([]);
+    const [ufs, setUfs] = useState<UfAPI[]>([]);
     const [selectedUf, setSelectedUf] = useState('0');
     const [cities, setCities] = useState<string[]>([]);
     const [selectedCity, setSelectedCity] = useState('0');
@@ -60,7 +60,7 @@ const CreatePoint = () => {
 
         if (selectedUf === '0') return;
 
-        axios.get<cityAPI[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUf}/municipios`)
+        axios.get<CityAPI[]>(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedUf}/municipios`)
             .then(response => {
                 const cityNames = response.data.map(item => item.nome);
                 setCities(cityNames);
@@ -110,6 +110,8 @@ const CreatePoint = () => {
         const [latitude, longitude] = selectedPosition;
         const itemsSelect = selectedItems;
 
+
+
         const data = {
             name,
             email,
@@ -121,6 +123,12 @@ const CreatePoint = () => {
             items: itemsSelect,
         };
 
+        // Não faz a requisição caso algum campo esteja vazio
+        if(!validateData(data)){
+            alert('Preencha todos os campos');
+            return;
+        }
+
         try {
             await api.post('/points', data);
             alert('Sucesso');
@@ -129,7 +137,18 @@ const CreatePoint = () => {
         }finally{
             history.push('/'); //envia usuário para a home
         }
-        
+    }
+
+    function validateData(data: ValidateData){
+        if(!data.name) return false;
+        if(!data.email) return false;
+        if(!data.whatsapp) return false;
+        if(!data.latitude) return false;
+        if(!data.longitude) return false;
+        if(!data.city) return false;
+        if(!data.uf) return false;
+        if(!(data.items.length > 0)) return false;
+        return true;
     }
 
     return (

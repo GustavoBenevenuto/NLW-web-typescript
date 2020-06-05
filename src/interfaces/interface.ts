@@ -6,12 +6,23 @@ export interface ItemsAPI {
     image_url: string;
 }
 
-export interface ufAPI {
+export interface UfAPI {
     id: number;
     sigla: string;
     nome: string;
 }
 
-export interface cityAPI {
+export interface CityAPI {
     nome: string;
+}
+
+export interface ValidateData {
+    name: string;
+    email: string;
+    whatsapp: string;
+    longitude: number;
+    latitude: number;
+    uf: string;
+    city: string;
+    items: number[];
 }
