@@ -1,7 +1,7 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import './style.css';
 import logo from '../../assets/logo.svg';
-import { Link } from 'react-router-dom';//Usado para a rota sem a necessidade de regarregamento
+import { Link, useHistory } from 'react-router-dom';//Usado para a rota sem a necessidade de regarregamento
 import { FiChevronsLeft } from 'react-icons/fi'; //Icones dos botões
 import { Map, TileLayer, Marker } from 'react-leaflet'; //Criação do Mapa
 import { LeafletMouseEvent } from 'leaflet';
@@ -13,11 +13,12 @@ import { ItemsAPI, ufAPI, cityAPI } from '../../interfaces/interface';
 
 const CreatePoint = () => {
 
+    const history = useHistory();
     const [items, setItems] = useState<ItemsAPI[]>([]);
-    const [uf, setUf] = useState<ufAPI[]>([]);
+    const [ufs, setUfs] = useState<ufAPI[]>([]);
     const [selectedUf, setSelectedUf] = useState('0');
     const [cities, setCities] = useState<string[]>([]);
-    const [selectedCites, setSelectedCites] = useState('0');
+    const [selectedCity, setSelectedCity] = useState('0');
     const [selectedPosition, setSelectedPosition] = useState<[number, number]>([0, 0]);
     const [initialPosition, setInitialPosition] = useState<[number, number]>([0, 0]);
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -49,7 +50,7 @@ const CreatePoint = () => {
 
         axios.get('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome')
             .then(response => {
-                setUf(response.data);
+                setUfs(response.data);
             })
             .catch(e => alert('Erro ao cerregar as UF: ' + e));
     }, []);
@@ -75,7 +76,7 @@ const CreatePoint = () => {
 
     // Pegar qual é a cidade selecionada
     function handleSelectedCities(event: ChangeEvent<HTMLSelectElement>) {
-        setSelectedCites(event.target.value);
+        setSelectedCity(event.target.value);
     }
 
     // Pegar a latitude e longitude que o usuário clicar no mapa
@@ -84,6 +85,7 @@ const CreatePoint = () => {
         setSelectedPosition([lat, lng]);
     }
 
+    //
     function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
         const { name, value } = event.target;
         setFormData({ ...fromData, [name]: value });
@@ -93,11 +95,41 @@ const CreatePoint = () => {
         const ids = [...selectedItems];
         const index = ids.indexOf(id);
         if (ids.includes(id)) {
-            ids.splice(index,1);
+            ids.splice(index, 1);
         } else {
             ids.push(id);
         }
         setSelectedItems(ids);
+    }
+
+    async function handleSubimit(event: FormEvent) {
+        event.preventDefault();
+        const { name, email, whatsapp } = fromData;
+        const uf = selectedUf;
+        const city = selectedCity;
+        const [latitude, longitude] = selectedPosition;
+        const itemsSelect = selectedItems;
+
+        const data = {
+            name,
+            email,
+            whatsapp,
+            longitude,
+            latitude,
+            uf,
+            city,
+            items: itemsSelect,
+        };
+
+        try {
+            await api.post('/points', data);
+            alert('Sucesso');
+        } catch(e){
+            alert('Erro ao cadastrar: '+e);
+        }finally{
+            history.push('/'); //envia usuário para a home
+        }
+        
     }
 
     return (
@@ -112,7 +144,7 @@ const CreatePoint = () => {
             </header>
             {/* ------------------------------------------------------------------------- */}
 
-            <form>
+            <form onSubmit={handleSubimit}>
                 <h1>Cadastro do <br /> ponto de coleta</h1>
 
                 <fieldset>
@@ -162,7 +194,7 @@ const CreatePoint = () => {
                                 onChange={handleSelectedUf}
                             >
                                 <option value="0">Selecione o UF</option>
-                                {uf.map(item => (
+                                {ufs.map(item => (
                                     <option key={item.id} value={item.sigla}>{item.sigla}</option>
                                 ))}
                             </select>
@@ -170,7 +202,7 @@ const CreatePoint = () => {
 
                         <div className="field">
                             <label htmlFor="city">Cidade</label>
-                            <select name="city" id="city" value={selectedCites} onChange={handleSelectedCities}>
+                            <select name="city" id="city" value={selectedCity} onChange={handleSelectedCities}>
                                 <option value="0">Selecione a cidade</option>
                                 {cities.map((city) => (
                                     <option key={city} value={city}>{city}</option>
